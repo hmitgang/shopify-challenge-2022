@@ -14,3 +14,7 @@ Each item should also have
 * SKU
 * Friendly name
 * Description
+
+todo: 
+- cannot update sku
+- add warehouse support
