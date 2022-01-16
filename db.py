@@ -6,17 +6,34 @@ DB_NAME = "inventory.db"
 def init_tables():
     con = sqlite3.connect(DB_NAME)
 
-    con.cursor().execute("""
+    cur = con.cursor()
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         description TEXT
-    )""").execute("""
+    )""")
+    
+    # Note: when actually storing locations, we probably want to store much more
+    #       address data, including city, postal code in some countries, street name,
+    #       perhaps contact information/manager, or other pertant information. To
+    #       keep things simple, we'll just use a friendly name and a country
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        country TEXT NOT NULL
+    )""")
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT NOT NULL UNIQUE,
-        quantity INTEGER NOT NULL DEFAULT 0
+        location_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY(sku) REFERENCES items(sku),
+        FOREIGN KEY(location_id) REFERENCES locations(id)
     )""")
     
     con.commit()

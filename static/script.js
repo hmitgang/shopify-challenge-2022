@@ -3,6 +3,9 @@ window.onload =  () => {
     let input_name = document.getElementById("name");
     let input_description = document.getElementById("description");
     let input_quantity = document.getElementById("quantity");
+    let input_location = document.getElementById("location");
+    let input_location_name = document.getElementById("location_name");
+    let input_location_country = document.getElementById("location_country");
     let tbl = document.getElementById("results")
 
     let delete_func = function(sku) {
@@ -86,7 +89,43 @@ window.onload =  () => {
     }
 
 
-    document.getElementById("find").addEventListener("click", ()=> {
+    document.getElementById("location_create").addEventListener("click", () => {
+        if(!input_location_name.value || !input_location_country.value) {
+            return alert("Please include both a name and country.")
+        }
+
+        fetch("/api/locations", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: input_location_name.value,
+                country: input_location_country.value
+            })
+        })
+    });
+
+    function getLocations() {
+        fetch("/api/locations").then((data) => data.json()).then(json => {
+            input_location.innerHTML = "<option>--</option>";
+            json["locations"].forEach((data) => {
+                loc = {}
+                data.forEach(
+                    (value, idx) => loc[json["headers"][idx]] = value
+                )
+                let newOption = document.createElement("option");
+                newOption.innerText = `${loc["name"]}, ${loc["country"].toUpperCase()}`;
+                newOption.setAttribute("value", loc["id"]);
+                input_location.appendChild(newOption);
+            });
+        })
+    }
+
+    document.getElementById("location_retrieve_locations").addEventListener("click", getLocations);
+    getLocations(); // Do it once on page load
+
+    document.getElementById("find").addEventListener("click", () => {
 
         let params = {};
         if(input_sku.value) params["sku"] = input_sku.value;

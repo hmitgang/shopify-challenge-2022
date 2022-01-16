@@ -5,12 +5,23 @@
     <script src="{{ url_for('static',filename='script.js') }}"></script>
 </head>
 <body>
-    
     <div>
+        <h4>Create location</h4>
+        <label>Location name:</label><input id="location_name">
+        <label>Country:</label><input id="location_country">
+        <button id="location_create">Create</button>
+        <button id="location_retrieve_locations">Retrieve Locations</button>
+    </div>
+    <br>
+    <div>
+        <h4>Inventory</h4>
         <label>SKU:</label><input id="sku">
         <label>Name:</label><input id="name">
         <label>Description:</label><input id="description">
         <label>Quantity:</label><input id="quantity" type="number">
+        <label>Location:</label><select id="location">
+            <option>--</option>
+        </select>
         <button id="create">Create</button>
         <button id="find">Find</button>
         <button id="clear">Clear</button>
