@@ -8,7 +8,7 @@ window.onload =  () => {
     let input_location_country = document.getElementById("location_country");
     let tbl = document.getElementById("results")
 
-    let delete_func = function(sku) {
+    let delete_func = function(sku) { // this will return a function for each specific sku
         return async () => {
             if(!confirm("Deleting this sku will delete it from all locations.")) return;
             let resp = await fetch(`/api/inventory/${sku}`, {
@@ -66,6 +66,7 @@ window.onload =  () => {
         })
         tbl.append(thead);
 
+        // create body of the table
         inventory_items.forEach((row) => {
             let tr = document.createElement("tr");
             tr.id = "sku_row_"+row[sku_idx];
@@ -103,9 +104,6 @@ window.onload =  () => {
         })
 
     }
-
-
-    
 
     function getLocations() {
         fetch("/api/locations").then((data) => data.json()).then(json => {
@@ -162,6 +160,7 @@ window.onload =  () => {
         let params = {};
         if(input_sku.value) params["sku"] = input_sku.value;
         if(input_name.value) params["name"] = input_name.value;
+        if(input_location.value !== '') params["location_id"] = input_location.value;
 
         fetch("/api/inventory?" + new URLSearchParams(params)).then(handle_query);
     });

@@ -17,7 +17,7 @@ def init_tables():
     
     # Note: when actually storing locations, we probably want to store much more
     #       address data, including city, postal code in some countries, street name,
-    #       perhaps contact information/manager, or other pertant information. To
+    #       perhaps contact information/manager, or other pertinent information. To
     #       keep things simple, we'll just use a friendly name and a country
     cur.execute("""
     CREATE TABLE IF NOT EXISTS locations (

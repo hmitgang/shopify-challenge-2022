@@ -6,7 +6,11 @@
 </head>
 <body>
     <div>
-        <h4>Create location</h4>
+        <h4>Create location/warehouse</h4>
+        <p>When actually storing locations, we probably want to store much more
+           address data, including city, postal code in some countries, street name,
+           perhaps contact information/manager, or other pertinent information. To
+           keep things simple, we'll just use a friendly name and a country.</p>
         <label>Location name:</label><input id="location_name">
         <label>Country:</label><input id="location_country">
         <button id="location_create">Create</button>
@@ -26,12 +30,17 @@
         <button id="find">Find</button>
         <button id="clear">Clear</button>
         <button id="delete_location">Delete Location</button>
+        <p>Each item contains a sku, name, and description. Each sku can be at multiple
+            locations with varying quantities. You can find (query) by sku, name, and 
+            location. Leave the field blank to not filter on that field.
+        </p>
     </div>
     <br>
     <div>
         <table id="results">
 
         </table>
+        <p>Note: deleting an entry really deletes the entire item.</p>
     </div>
 </body>
 </html>
