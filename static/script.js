@@ -10,22 +10,31 @@ window.onload =  () => {
 
     let delete_func = function(sku) {
         return async () => {
+            if(!confirm("Deleting this sku will delete it from all locations.")) return;
             let resp = await fetch(`/api/inventory/${sku}`, {
                 method: "DELETE"
             });
             if(resp.status == 200)
-                document.getElementById(`sku_row_${sku}`).remove();
+                while(document.getElementById(`sku_row_${sku}`))
+                    document.getElementById(`sku_row_${sku}`).remove();
             else
                 alert(`Failed to delete ${sku}`);
         }
     }
 
-    let update_func = function(sku, headers) {
+    // TODO: add update for location
+    let update_func = function(sku, headers, location_id) {
         return async () => {
             let values = {}
-            let row = document.getElementById(`sku_row_${sku}`).children
+            let row = document.querySelector(`#sku_row_${sku}.location_${location_id}`).children
             headers.forEach((header, idx) => {
-                values[header] = header == "sku" ? sku : row[idx].firstElementChild.value
+                if(header == "sku") {
+                    values[header] = sku;    
+                } else if (header=="location") {
+                    values["location_id"] = location_id;
+                } else {
+                    values[header] = row[idx].firstElementChild.value;
+                }
             });
             let resp = await fetch(`/api/inventory/${sku}`, {
                 method: "PUT",
@@ -45,7 +54,10 @@ window.onload =  () => {
         let {headers, inventory_items} = await data.json();
         let sku_idx = headers.indexOf("sku");
         let quantity_idx = headers.indexOf("quantity");
+        let location_idx = headers.indexOf("location_id");
+        headers[location_idx] = "location";
 
+        // Create headers
         let thead = document.createElement("tr");
         [...headers, "Actions"].forEach((title) => {
             let th = document.createElement("th");
@@ -57,9 +69,13 @@ window.onload =  () => {
         inventory_items.forEach((row) => {
             let tr = document.createElement("tr");
             tr.id = "sku_row_"+row[sku_idx];
+            tr.className = "location_"+row[location_idx];
             row.forEach((cell, idx) => {
                 let td = document.createElement('td');
                 if(idx == sku_idx) {
+                    td.innerText = cell;
+                } else if(idx == location_idx) {
+                    // Todo: convert this to a friendly name
                     td.innerText = cell;
                 } else {
                     let input = document.createElement("input");
@@ -78,7 +94,7 @@ window.onload =  () => {
 
             let update_button = document.createElement("button");
             update_button.innerText = "Update";
-            update_button.onclick = update_func(row[sku_idx], headers);
+            update_button.onclick = update_func(row[sku_idx], headers, row[location_idx]);
             
             td.append(update_button, delete_button);
             tr.append(td);
@@ -88,6 +104,24 @@ window.onload =  () => {
 
     }
 
+
+    
+
+    function getLocations() {
+        fetch("/api/locations").then((data) => data.json()).then(json => {
+            input_location.innerHTML = "<option value>--</option>";
+            json["locations"].forEach((data) => {
+                loc = {}
+                data.forEach(
+                    (value, idx) => loc[json["headers"][idx]] = value
+                )
+                let newOption = document.createElement("option");
+                newOption.innerText = `${loc["id"]}: ${loc["name"]}, ${loc["country"].toUpperCase()}`;
+                newOption.setAttribute("value", loc["id"]);
+                input_location.appendChild(newOption);
+            });
+        })
+    }
 
     document.getElementById("location_create").addEventListener("click", () => {
         if(!input_location_name.value || !input_location_country.value) {
@@ -103,27 +137,25 @@ window.onload =  () => {
                 name: input_location_name.value,
                 country: input_location_country.value
             })
-        })
+        }).then(getLocations);
     });
-
-    function getLocations() {
-        fetch("/api/locations").then((data) => data.json()).then(json => {
-            input_location.innerHTML = "<option>--</option>";
-            json["locations"].forEach((data) => {
-                loc = {}
-                data.forEach(
-                    (value, idx) => loc[json["headers"][idx]] = value
-                )
-                let newOption = document.createElement("option");
-                newOption.innerText = `${loc["name"]}, ${loc["country"].toUpperCase()}`;
-                newOption.setAttribute("value", loc["id"]);
-                input_location.appendChild(newOption);
-            });
-        })
-    }
 
     document.getElementById("location_retrieve_locations").addEventListener("click", getLocations);
     getLocations(); // Do it once on page load
+
+    document.getElementById("delete_location").addEventListener("click", async () => {
+        if(input_location.value === '') {
+            return alert("Please select a location to delete");
+        }
+        
+        let resp = await fetch(`/api/locations/${input_location.value}`, {
+            method: "DELETE"
+        });
+        if(resp.status == 200)
+            getLocations();
+        else
+            alert(`Failed to delete ${location}`);
+    });
 
     document.getElementById("find").addEventListener("click", () => {
 
@@ -135,8 +167,8 @@ window.onload =  () => {
     });
 
     document.getElementById("create").addEventListener("click", ()=> {
-        if(!input_sku.value || !input_name.value) {
-            return alert("Please include both sku and name");
+        if(!input_sku.value || !input_location.value) {
+            return alert("Please include both sku and location");
         }
 
         fetch("/api/inventory", {
@@ -148,7 +180,8 @@ window.onload =  () => {
                 sku: input_sku.value,
                 name: input_name.value,
                 description: input_description.value,
-                quantity: Number(input_quantity.value)
+                quantity: Number(input_quantity.value),
+                location_id: input_location.value
             })
         }).then((response) => {
             console.log(response);

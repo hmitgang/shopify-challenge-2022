@@ -11,24 +11,27 @@ app.teardown_appcontext(close_db)
 def inventory(sku=None):
     if request.method == "POST":
         db = get_db()
+        existing = db.execute("SELECT sku FROM items WHERE sku=? LIMIT 1", (request.json.get("sku"),)).fetchall()
+        if len(existing) == 0: # sku doesnt yet exist. Create the item
+            db.execute(
+                "INSERT INTO items (sku, name, description) VALUES (?,?,?)", 
+                (request.json.get("sku"), request.json.get("name"), request.json.get("description")))
         db.execute(
-            "INSERT INTO items (sku, name, description) VALUES (?,?,?)", 
-            (request.json.get("sku"), request.json.get("name"), request.json.get("description")))
-        db.execute(
-            "INSERT INTO inventory (sku, quantity) VALUES (?, ?)",
-            (request.json.get("sku"), request.json.get("quantity")))
+            "INSERT INTO inventory (sku, quantity, location_id) VALUES (?, ?, ?)",
+            (request.json.get("sku"), request.json.get("quantity"),request.json.get("location_id"),))
         db.commit()
         return "Success" # In the future, we may want to return the newly created item
+    
     if request.method == "GET":
         print(request.args)
         if "sku" in request.args:
-            resp = get_db().execute("SELECT inventory.sku as sku, name, description, quantity FROM items JOIN inventory ON inventory.sku = items.sku WHERE items.sku=? AND name LIKE ?", 
-                (request.args.get("sku"), request.args.get("name")+'%')).fetchall()
+            resp = get_db().execute("SELECT inventory.sku as sku, name, description, quantity, location_id FROM items JOIN inventory ON inventory.sku = items.sku WHERE items.sku=? AND name LIKE ?", 
+                (request.args.get("sku"), (request.args.get("name") or '')+'%')).fetchall()
         else:
-            resp = get_db().execute("SELECT inventory.sku as sku, name, description, quantity FROM items JOIN inventory ON inventory.sku = items.sku WHERE name LIKE ?", 
+            resp = get_db().execute("SELECT inventory.sku as sku, name, description, quantity, location_id FROM items JOIN inventory ON inventory.sku = items.sku WHERE name LIKE ?", 
                 ((request.args.get("name") or '')+'%',)).fetchall()
 
-        return {"headers": ["sku", "name", "description", "quantity"], "inventory_items": resp}
+        return {"headers": ["sku", "name", "description", "quantity", "location_id"], "inventory_items": resp}
 
     # For DELETE and PUT methods, we must have a sku
     if not sku:
@@ -43,8 +46,8 @@ def inventory(sku=None):
         db = get_db()
         print(request.json)
         if request.json.get("quantity"):
-            db.execute("UPDATE inventory SET quantity=? WHERE sku = ?",
-                (request.json.get("quantity"),sku))
+            db.execute("UPDATE inventory SET quantity=? WHERE sku = ? AND location_id = ?",
+                (request.json.get("quantity"),sku,request.json.get("location_id")))
         if request.json.get("name"):
             db.execute("UPDATE items SET name=? WHERE sku = ?",
                 (request.json.get("name"),sku))
@@ -57,7 +60,7 @@ def inventory(sku=None):
     raise Exception("Unreachable statement")
 
 
-@app.route("/api/locations/<id>", methods=("DELETE",))
+@app.route("/api/locations/<location_id>", methods=("DELETE",))
 @app.route("/api/locations", methods=("GET", "POST"))
 def locations(location_id=None):
     if request.method == "GET":

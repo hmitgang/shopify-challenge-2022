@@ -11,7 +11,7 @@ def init_tables():
     CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT NOT NULL UNIQUE,
-        name TEXT NOT NULL,
+        name TEXT,
         description TEXT
     )""")
     
@@ -29,11 +29,12 @@ def init_tables():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sku TEXT NOT NULL UNIQUE,
+        sku TEXT NOT NULL,
         location_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY(sku) REFERENCES items(sku),
-        FOREIGN KEY(location_id) REFERENCES locations(id)
+        FOREIGN KEY(location_id) REFERENCES locations(id),
+        UNIQUE(sku, location_id)
     )""")
     
     con.commit()
